@@ -18,7 +18,8 @@ import seaborn as sns
 import pandas as pd
 from typing import List, Dict, Any, Union, Optional, Tuple
 from datetime import datetime, timedelta
-from telegram import Update, Bot, InlineKeyboardButton, InlineKeyboardMarkup, ChatPermissions, ParseMode
+from telegram import Update, Bot, InlineKeyboardButton, InlineKeyboardMarkup, ChatPermissions
+from telegram.constants import ParseMode
 from telegram.ext import Updater, CommandHandler, MessageHandler, CallbackQueryHandler, CallbackContext
 from telegram.ext import Filters
 from telegraph import Telegraph
