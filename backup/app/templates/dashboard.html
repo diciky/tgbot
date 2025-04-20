@@ -1,0 +1,307 @@
+{% extends "base.html" %}
+
+{% block title %}仪表盘 - Telegram Bot管理系统{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4"><i class="bi bi-speedometer2"></i> 仪表盘</h1>
+    </div>
+</div>
+
+<div class="row" id="statCards">
+    <div class="col-md-3 mb-4">
+        <div class="card bg-primary text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title">用户总数</h5>
+                        <h2 class="mb-0" id="userCount">加载中...</h2>
+                    </div>
+                    <i class="bi bi-people fs-1"></i>
+                </div>
+            </div>
+            <div class="card-footer d-flex align-items-center justify-content-between">
+                <a href="/users" class="text-white text-decoration-none">查看详情</a>
+                <div><i class="bi bi-chevron-right"></i></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card bg-success text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title">消息总数</h5>
+                        <h2 class="mb-0" id="messageCount">加载中...</h2>
+                    </div>
+                    <i class="bi bi-chat-dots fs-1"></i>
+                </div>
+            </div>
+            <div class="card-footer d-flex align-items-center justify-content-between">
+                <a href="/messages" class="text-white text-decoration-none">查看详情</a>
+                <div><i class="bi bi-chevron-right"></i></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card bg-info text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title">群组数量</h5>
+                        <h2 class="mb-0" id="groupCount">加载中...</h2>
+                    </div>
+                    <i class="bi bi-diagram-3 fs-1"></i>
+                </div>
+            </div>
+            <div class="card-footer d-flex align-items-center justify-content-between">
+                <a href="/groups" class="text-white text-decoration-none">查看详情</a>
+                <div><i class="bi bi-chevron-right"></i></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card bg-warning text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title">群组人数</h5>
+                        <h2 class="mb-0" id="memberCount">加载中...</h2>
+                    </div>
+                    <i class="bi bi-people-fill fs-1"></i>
+                </div>
+            </div>
+            <div class="card-footer d-flex align-items-center justify-content-between">
+                <a href="/users" class="text-white text-decoration-none">查看详情</a>
+                <div><i class="bi bi-chevron-right"></i></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">今日活跃度</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="activityChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">本月消息趋势</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="monthlyTrendChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">快速操作</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="/users" class="btn btn-outline-primary"><i class="bi bi-people"></i> 管理用户</a>
+                    <a href="/messages" class="btn btn-outline-success"><i class="bi bi-chat-dots"></i> 查看消息</a>
+                    <a href="/keywords" class="btn btn-outline-danger"><i class="bi bi-filter-circle"></i> 关键词管理</a>
+                    <a href="/commands" class="btn btn-outline-info"><i class="bi bi-code-slash"></i> 自定义命令</a>
+                    <button class="btn btn-outline-secondary" id="sendTestMsgBtn"><i class="bi bi-send"></i> 发送测试消息</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">系统状态</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Bot状态
+                        <span class="badge bg-success rounded-pill">在线</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        数据库连接
+                        <span class="badge bg-success rounded-pill">已连接</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        自动删除消息
+                        <span class="badge" id="autoDeleteStatus"></span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        调试模式
+                        <span class="badge" id="debugModeStatus"></span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        最后更新时间
+                        <span id="lastUpdate">-</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+<script>
+    // 获取统计数据
+    async function loadStats() {
+        try {
+            const response = await axios.get('/api/stats');
+            const data = response.data;
+            
+            // 更新卡片数据
+            document.getElementById('userCount').textContent = data.user_count || 0;
+            document.getElementById('messageCount').textContent = data.message_count || 0;
+            document.getElementById('groupCount').textContent = data.group_count || 0;
+            document.getElementById('memberCount').textContent = data.member_count || 0;
+            
+            // 更新系统状态
+            const autoDeleteEl = document.getElementById('autoDeleteStatus');
+            autoDeleteEl.textContent = data.auto_delete_messages ? '开启' : '关闭';
+            autoDeleteEl.className = 'badge ' + (data.auto_delete_messages ? 'bg-success' : 'bg-danger') + ' rounded-pill';
+            
+            const debugModeEl = document.getElementById('debugModeStatus');
+            debugModeEl.textContent = data.debug_mode ? '开启' : '关闭';
+            debugModeEl.className = 'badge ' + (data.debug_mode ? 'bg-warning' : 'bg-secondary') + ' rounded-pill';
+            
+            // 更新最后更新时间
+            const now = new Date();
+            document.getElementById('lastUpdate').textContent = now.toLocaleString();
+            
+            // 更新活跃度图表
+            if (data.hourly_activity) {
+                updateActivityChart(data.hourly_activity);
+            }
+            
+            // 更新月度趋势图表
+            if (data.monthly_trend) {
+                updateMonthlyTrendChart(data.monthly_trend);
+            }
+        } catch (error) {
+            console.error('获取统计数据失败:', error);
+        }
+    }
+    
+    // 更新今日活跃度图表
+    function updateActivityChart(hourlyData) {
+        const ctx = document.getElementById('activityChart').getContext('2d');
+        
+        const hours = Array.from({length: 24}, (_, i) => i);
+        const counts = hours.map(hour => hourlyData[hour] || 0);
+        
+        if (window.activityChart) {
+            window.activityChart.data.datasets[0].data = counts;
+            window.activityChart.update();
+        } else {
+            window.activityChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: hours.map(h => `${h}:00`),
+                    datasets: [{
+                        label: '消息数量',
+                        data: counts,
+                        backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+    }
+    
+    // 更新月度趋势图表
+    function updateMonthlyTrendChart(monthlyData) {
+        const ctx = document.getElementById('monthlyTrendChart').getContext('2d');
+        
+        const days = Object.keys(monthlyData).sort();
+        const counts = days.map(day => monthlyData[day] || 0);
+        
+        if (window.monthlyChart) {
+            window.monthlyChart.data.labels = days;
+            window.monthlyChart.data.datasets[0].data = counts;
+            window.monthlyChart.update();
+        } else {
+            window.monthlyChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: days,
+                    datasets: [{
+                        label: '消息数量',
+                        data: counts,
+                        fill: false,
+                        backgroundColor: 'rgba(75, 192, 192, 0.5)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1,
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+    }
+    
+    // 发送测试消息
+    document.getElementById('sendTestMsgBtn').addEventListener('click', async function() {
+        try {
+            const adminId = prompt('请输入管理员ID:');
+            if (!adminId) return;
+            
+            const message = '这是一条测试消息，时间: ' + new Date().toLocaleString();
+            await axios.post('/api/send_message', null, {
+                params: {
+                    chat_id: parseInt(adminId),
+                    text: message
+                }
+            });
+            
+            alert('测试消息已发送!');
+        } catch (error) {
+            alert('发送消息失败: ' + (error.response?.data?.detail || error.message));
+        }
+    });
+    
+    // 页面加载完成后获取数据
+    document.addEventListener('DOMContentLoaded', function() {
+        loadStats();
+        
+        // 每60秒刷新一次数据
+        setInterval(loadStats, 60000);
+    });
+</script>
+{% endblock %} 

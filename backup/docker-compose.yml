@@ -1,0 +1,74 @@
+version: '3'
+
+services:
+  # MongoDB数据库服务
+  mongodb:
+    image: mongo:latest
+    container_name: tgbot-mongodb
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_DB}
+    volumes:
+      - mongo-data:/data/db
+      - ./docker/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    ports:
+      - "27017:27017"
+    networks:
+      - tgbot-network
+
+  # Telegram Bot应用服务
+  tgbot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tgbot-app
+    restart: always
+    depends_on:
+      - mongodb
+    environment:
+      # Telegram Bot配置
+      BOT_TOKEN: ${BOT_TOKEN}
+      ADMIN_IDS: ${ADMIN_IDS}
+      
+      # MongoDB配置
+      MONGO_USERNAME: ${MONGO_USERNAME}
+      MONGO_PASSWORD: ${MONGO_PASSWORD}
+      MONGO_DB: ${MONGO_DB}
+      MONGO_HOST: mongodb
+      
+      # Web配置
+      WEB_PORT: ${WEB_PORT}
+      WEB_HOST: ${WEB_HOST}
+      SECRET_KEY: ${SECRET_KEY}
+      ADMIN_USERNAME: ${ADMIN_USERNAME}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      
+      # 日志配置
+      LOG_FILE: ${LOG_FILE}
+      LOG_LEVEL: ${LOG_LEVEL}
+      DEBUG: ${DEBUG}
+      
+      # 消息自动删除配置
+      AUTO_DELETE_MESSAGES: ${AUTO_DELETE_MESSAGES}
+      AUTO_DELETE_INTERVAL: ${AUTO_DELETE_INTERVAL}
+      
+      # Ollama配置
+      OLLAMA_API_URL: ${OLLAMA_API_URL}
+      OLLAMA_MODEL: ${OLLAMA_MODEL}
+    ports:
+      - "${WEB_PORT}:${WEB_PORT}"
+    volumes:
+      - ./logs:/app/logs
+      - ./app:/app/app
+      - ./main.py:/app/main.py
+    networks:
+      - tgbot-network
+
+networks:
+  tgbot-network:
+    driver: bridge
+
+volumes:
+  mongo-data: 

@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block title %}关键词管理 - Telegram Bot管理系统{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="bi bi-filter-circle"></i> 关键词管理</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <button type="button" class="btn btn-sm btn-primary" id="addKeywordBtn">
+            <i class="bi bi-plus"></i> 添加关键词
+        </button>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="card-title mb-0">一般关键词</h5>
+            </div>
+            <div class="card-body">
+                <p>一般关键词包含常规回复词、预设常用词，使用正则替换</p>
+                <div class="list-group" id="normalKeywords">
+                    <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">你好</h6>
+                            <p class="mb-1 text-muted small">回复: 你好，有什么可以帮到你的吗？</p>
+                        </div>
+                        <div>
+                            <button class="btn btn-sm btn-outline-primary me-1"><i class="bi bi-pencil"></i></button>
+                            <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                        </div>
+                    </div>
+                    <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">谢谢</h6>
+                            <p class="mb-1 text-muted small">回复: 不客气，很高兴能帮到你！</p>
+                        </div>
+                        <div>
+                            <button class="btn btn-sm btn-outline-primary me-1"><i class="bi bi-pencil"></i></button>
+                            <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-warning text-white">
+                <h5 class="card-title mb-0">敏感关键词</h5>
+            </div>
+            <div class="card-body">
+                <p>敏感关键词用于检测和提醒用户不恰当用语，不自动删除</p>
+                <div class="list-group" id="sensitiveKeywords">
+                    <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">敏感词1</h6>
+                            <p class="mb-1 text-muted small">提醒: 请注意用语文明</p>
+                        </div>
+                        <div>
+                            <button class="btn btn-sm btn-outline-primary me-1"><i class="bi bi-pencil"></i></button>
+                            <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                        </div>
+                    </div>
+                    <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">敏感词2</h6>
+                            <p class="mb-1 text-muted small">提醒: 请注意言论</p>
+                        </div>
+                        <div>
+                            <button class="btn btn-sm btn-outline-primary me-1"><i class="bi bi-pencil"></i></button>
+                            <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h5 class="card-title mb-0">严禁关键词</h5>
+            </div>
+            <div class="card-body">
+                <p>严禁关键词将触发自动删除并记录，管理员会收到通知</p>
+                <div class="list-group" id="bannedKeywords">
+                    <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">严禁词1</h6>
+                            <p class="mb-1 text-muted small">操作: 删除消息并警告</p>
+                        </div>
+                        <div>
+                            <button class="btn btn-sm btn-outline-primary me-1"><i class="bi bi-pencil"></i></button>
+                            <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                        </div>
+                    </div>
+                    <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">严禁词2</h6>
+                            <p class="mb-1 text-muted small">操作: 删除消息并警告</p>
+                        </div>
+                        <div>
+                            <button class="btn btn-sm btn-outline-primary me-1"><i class="bi bi-pencil"></i></button>
+                            <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 添加关键词模态框 -->
+<div class="modal fade" id="keywordModal" tabindex="-1" aria-labelledby="keywordModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="keywordModalLabel">添加关键词</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="keywordForm">
+                    <div class="mb-3">
+                        <label for="keywordType" class="form-label">关键词类型</label>
+                        <select class="form-select" id="keywordType">
+                            <option value="normal">一般关键词</option>
+                            <option value="sensitive">敏感关键词</option>
+                            <option value="banned">严禁关键词</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="keyword" class="form-label">关键词</label>
+                        <input type="text" class="form-control" id="keyword" placeholder="输入关键词，支持正则表达式">
+                    </div>
+                    <div class="mb-3">
+                        <label for="response" class="form-label">响应内容</label>
+                        <textarea class="form-control" id="response" rows="3" placeholder="输入回复/提醒内容"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="action" class="form-label">触发动作</label>
+                        <select class="form-select" id="action">
+                            <option value="reply">回复消息</option>
+                            <option value="warn">提醒用户</option>
+                            <option value="delete">删除消息</option>
+                            <option value="delete_warn">删除并警告</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="saveKeyword">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 添加关键词按钮
+        document.getElementById('addKeywordBtn').addEventListener('click', function() {
+            var modal = new bootstrap.Modal(document.getElementById('keywordModal'));
+            modal.show();
+        });
+        
+        // 保存关键词
+        document.getElementById('saveKeyword').addEventListener('click', function() {
+            // 获取表单数据
+            const type = document.getElementById('keywordType').value;
+            const keyword = document.getElementById('keyword').value;
+            const response = document.getElementById('response').value;
+            const action = document.getElementById('action').value;
+            
+            // 验证表单
+            if (!keyword || !response) {
+                alert('请填写完整信息');
+                return;
+            }
+            
+            // 这里应该发送到API保存数据
+            // 模拟保存成功
+            alert('关键词保存成功！');
+            
+            // 关闭模态框
+            var modal = bootstrap.Modal.getInstance(document.getElementById('keywordModal'));
+            modal.hide();
+        });
+    });
+</script>
+{% endblock %} 

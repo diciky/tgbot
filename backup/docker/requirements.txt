@@ -1,0 +1,17 @@
+python-telegram-bot==13.15
+motor==3.1.1
+pymongo==4.3.3
+python-dotenv==0.21.1
+requests==2.28.2
+telegraph==2.2.0
+numpy==1.24.3
+matplotlib==3.7.1
+seaborn==0.12.2
+pandas==2.0.0
+aiohttp==3.8.5
+fastapi==0.103.1
+uvicorn==0.23.2
+jinja2==3.1.2
+bcrypt==4.0.1
+pydantic==2.3.0
+pyjwt==2.8.0 

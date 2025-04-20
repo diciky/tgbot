@@ -1,0 +1,502 @@
+{% extends "base.html" %}
+
+{% block title %}消息管理 - Telegram Bot管理系统{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4"><i class="bi bi-chat-dots"></i> 消息管理</h1>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">筛选条件</h5>
+            </div>
+            <div class="card-body">
+                <form id="filterForm">
+                    <div class="mb-3">
+                        <label for="chatIdSelect" class="form-label">选择群组</label>
+                        <select class="form-select" id="chatIdSelect">
+                            <option value="">-- 请选择群组 --</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="chatIdInput" class="form-label">聊天ID</label>
+                        <input type="number" class="form-control" id="chatIdInput" placeholder="输入聊天ID" required>
+                        <div class="form-text">请输入要查询的聊天ID</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-search"></i> 查询
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" id="refreshBtn">
+                        <i class="bi bi-arrow-clockwise"></i> 刷新
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">消息统计</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-4 mb-3">
+                        <div class="border rounded p-3">
+                            <h3 id="totalMessages">-</h3>
+                            <p class="text-muted mb-0">总消息数</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="border rounded p-3">
+                            <h3 id="textMessages">-</h3>
+                            <p class="text-muted mb-0">文本消息</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="border rounded p-3">
+                            <h3 id="mediaMessages">-</h3>
+                            <p class="text-muted mb-0">媒体消息</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">消息列表</h5>
+        <div>
+            <button class="btn btn-sm btn-outline-danger" id="clearMessagesBtn">
+                <i class="bi bi-trash"></i> 清空消息
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div id="messagesList" class="mb-3">
+            <div class="text-center text-muted py-5">
+                <i class="bi bi-chat-dots fs-1"></i>
+                <p class="mt-2">请输入聊天ID并点击查询按钮</p>
+            </div>
+        </div>
+    </div>
+    <div class="card-footer">
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center" id="pagination">
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" tabindex="-1">上一页</a>
+                </li>
+                <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                <li class="page-item disabled">
+                    <a class="page-link" href="#">下一页</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</div>
+
+<!-- 发送消息表单 -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">发送消息</h5>
+    </div>
+    <div class="card-body">
+        <form id="sendMessageForm">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label for="sendChatId" class="form-label">聊天ID</label>
+                    <input type="number" class="form-control" id="sendChatId" required>
+                </div>
+                <div class="col-md-8 mb-3">
+                    <label for="messageText" class="form-label">消息内容</label>
+                    <textarea class="form-control" id="messageText" rows="3" required></textarea>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-send"></i> 发送消息
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // 全局变量
+    let currentPage = 1;
+    let pageSize = 10;
+    let totalMessages = 0;
+    let currentChatId = null;
+    
+    // 加载群组列表
+    async function loadGroups() {
+        try {
+            const response = await axios.get('/api/messages');
+            const { groups } = response.data;
+            
+            const selectElement = document.getElementById('chatIdSelect');
+            selectElement.innerHTML = '<option value="">-- 请选择群组 --</option>';
+            
+            if (groups && groups.length > 0) {
+                groups.forEach(group => {
+                    const option = document.createElement('option');
+                    option.value = group.group_id;
+                    option.textContent = `${group.title} (ID: ${group.group_id})`;
+                    selectElement.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('加载群组列表失败:', error);
+        }
+    }
+    
+    // 群组选择器事件
+    document.getElementById('chatIdSelect').addEventListener('change', function() {
+        if (this.value) {
+            document.getElementById('chatIdInput').value = this.value;
+        }
+    });
+    
+    // 页面加载时获取群组列表
+    document.addEventListener('DOMContentLoaded', function() {
+        loadGroups();
+    });
+    
+    // 加载消息列表
+    async function loadMessages(chatId, page = 1, limit = 10) {
+        if (!chatId) {
+            return;
+        }
+        
+        try {
+            // 显示加载中
+            document.getElementById('messagesList').innerHTML = `
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">加载中...</span>
+                    </div>
+                    <p class="mt-2">加载消息中...</p>
+                </div>
+            `;
+            
+            // 计算跳过的记录数
+            const skip = (page - 1) * limit;
+            
+            // 发送请求
+            const response = await axios.get('/messages', {
+                params: { chat_id: chatId, skip, limit }
+            });
+            
+            const { messages, total } = response.data;
+            totalMessages = total;
+            
+            // 更新消息统计
+            document.getElementById('totalMessages').textContent = total;
+            
+            // 更新消息列表
+            let messagesHtml = '';
+            
+            if (messages.length === 0) {
+                messagesHtml = `
+                    <div class="text-center text-muted py-5">
+                        <i class="bi bi-chat-dots fs-1"></i>
+                        <p class="mt-2">没有找到消息</p>
+                    </div>
+                `;
+            } else {
+                messagesHtml = '<div class="message-timeline">';
+                
+                let lastDate = '';
+                
+                messages.forEach(message => {
+                    // 格式化日期
+                    const messageDate = new Date(message.date);
+                    const dateString = messageDate.toLocaleDateString();
+                    
+                    // 如果是新的一天，添加日期分割线
+                    if (dateString !== lastDate) {
+                        messagesHtml += `
+                            <div class="date-separator">
+                                <span>${dateString}</span>
+                            </div>
+                        `;
+                        lastDate = dateString;
+                    }
+                    
+                    // 判断消息类型
+                    let messageContent = '';
+                    let messageTypeIcon = '';
+                    
+                    switch (message.message_type) {
+                        case 'text':
+                            messageContent = `<p class="mb-0">${message.text || ''}</p>`;
+                            messageTypeIcon = '<i class="bi bi-chat-text"></i>';
+                            break;
+                        case 'photo':
+                            messageContent = `<p class="mb-0">[图片]</p>`;
+                            messageTypeIcon = '<i class="bi bi-image"></i>';
+                            break;
+                        case 'document':
+                            messageContent = `<p class="mb-0">[文档: ${message.content?.file_name || '未知文件'}]</p>`;
+                            messageTypeIcon = '<i class="bi bi-file-earmark"></i>';
+                            break;
+                        default:
+                            messageContent = `<p class="mb-0">[${message.message_type}]</p>`;
+                            messageTypeIcon = '<i class="bi bi-chat"></i>';
+                    }
+                    
+                    // 构建消息HTML
+                    messagesHtml += `
+                        <div class="message-item">
+                            <div class="message-time">
+                                ${messageDate.toLocaleTimeString()}
+                            </div>
+                            <div class="message-content">
+                                <div class="message-header">
+                                    <span class="message-type">${messageTypeIcon} ${message.message_type}</span>
+                                    <span class="message-id">ID: ${message.message_id}</span>
+                                </div>
+                                <div class="message-body">
+                                    ${messageContent}
+                                </div>
+                                <div class="message-footer">
+                                    <small class="text-muted">用户ID: ${message.user_id}</small>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                messagesHtml += '</div>';
+            }
+            
+            document.getElementById('messagesList').innerHTML = messagesHtml;
+            
+            // 更新分页
+            updatePagination(page, limit, total);
+            
+        } catch (error) {
+            console.error('加载消息失败:', error);
+            document.getElementById('messagesList').innerHTML = `
+                <div class="text-center text-danger py-5">
+                    <i class="bi bi-exclamation-triangle fs-1"></i>
+                    <p class="mt-2">加载失败: ${error.response?.data?.detail || error.message}</p>
+                </div>
+            `;
+        }
+    }
+    
+    // 更新分页
+    function updatePagination(currentPage, pageSize, totalItems) {
+        const totalPages = Math.ceil(totalItems / pageSize);
+        
+        let paginationHtml = '';
+        
+        // 上一页按钮
+        paginationHtml += `
+            <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                <a class="page-link" href="#" data-page="${currentPage - 1}">上一页</a>
+            </li>
+        `;
+        
+        // 页码按钮
+        const startPage = Math.max(1, currentPage - 2);
+        const endPage = Math.min(totalPages, startPage + 4);
+        
+        for (let i = startPage; i <= endPage; i++) {
+            paginationHtml += `
+                <li class="page-item ${i === currentPage ? 'active' : ''}">
+                    <a class="page-link" href="#" data-page="${i}">${i}</a>
+                </li>
+            `;
+        }
+        
+        // 下一页按钮
+        paginationHtml += `
+            <li class="page-item ${currentPage === totalPages || totalPages === 0 ? 'disabled' : ''}">
+                <a class="page-link" href="#" data-page="${currentPage + 1}">下一页</a>
+            </li>
+        `;
+        
+        document.getElementById('pagination').innerHTML = paginationHtml;
+        
+        // 添加分页事件
+        document.querySelectorAll('#pagination .page-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                if (this.parentElement.classList.contains('disabled')) {
+                    return;
+                }
+                
+                const page = parseInt(this.getAttribute('data-page'));
+                currentPage = page;
+                loadMessages(currentChatId, page, pageSize);
+            });
+        });
+    }
+    
+    // 页面加载完成后执行
+    document.addEventListener('DOMContentLoaded', function() {
+        // 查询表单提交
+        document.getElementById('filterForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const chatId = document.getElementById('chatIdInput').value.trim();
+            if (!chatId) {
+                alert('请输入聊天ID');
+                return;
+            }
+            
+            currentChatId = parseInt(chatId);
+            currentPage = 1;
+            
+            // 同步发送消息表单的聊天ID
+            document.getElementById('sendChatId').value = chatId;
+            
+            // 加载消息
+            loadMessages(currentChatId, currentPage, pageSize);
+        });
+        
+        // 刷新按钮
+        document.getElementById('refreshBtn').addEventListener('click', function() {
+            if (currentChatId) {
+                loadMessages(currentChatId, currentPage, pageSize);
+            }
+        });
+        
+        // 发送消息表单提交
+        document.getElementById('sendMessageForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const chatId = document.getElementById('sendChatId').value.trim();
+            const messageText = document.getElementById('messageText').value.trim();
+            
+            if (!chatId) {
+                alert('请输入聊天ID');
+                return;
+            }
+            
+            if (!messageText) {
+                alert('请输入消息内容');
+                return;
+            }
+            
+            try {
+                // 发送消息
+                await axios.post('/send_message', null, {
+                    params: {
+                        chat_id: parseInt(chatId),
+                        text: messageText
+                    }
+                });
+                
+                // 清空消息内容
+                document.getElementById('messageText').value = '';
+                
+                // 设置当前聊天ID并刷新消息列表
+                currentChatId = parseInt(chatId);
+                document.getElementById('chatIdInput').value = chatId;
+                loadMessages(currentChatId, 1, pageSize);
+                
+                alert('消息发送成功');
+            } catch (error) {
+                console.error('发送消息失败:', error);
+                alert('发送消息失败: ' + (error.response?.data?.detail || error.message));
+            }
+        });
+        
+        // 清空消息按钮
+        document.getElementById('clearMessagesBtn').addEventListener('click', function() {
+            if (!currentChatId) {
+                alert('请先选择一个聊天');
+                return;
+            }
+            
+            if (!confirm('确定要清空此聊天的所有消息吗？此操作不可撤销！')) {
+                return;
+            }
+            
+            alert('此功能尚未实现');
+            // 这里可以添加清空消息的API调用
+        });
+    });
+</script>
+<style>
+    .message-timeline {
+        border-left: 2px solid #dee2e6;
+        padding: 15px;
+        margin-left: 10px;
+    }
+    
+    .date-separator {
+        position: relative;
+        margin: 20px 0;
+        text-align: center;
+    }
+    
+    .date-separator span {
+        display: inline-block;
+        background: #fff;
+        padding: 0 10px;
+        font-weight: bold;
+        color: #6c757d;
+    }
+    
+    .message-item {
+        position: relative;
+        margin-bottom: 15px;
+        padding-left: 30px;
+    }
+    
+    .message-time {
+        position: absolute;
+        left: -65px;
+        top: 0;
+        color: #6c757d;
+        font-size: 0.8rem;
+    }
+    
+    .message-content {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 10px;
+        position: relative;
+    }
+    
+    .message-content:before {
+        content: '';
+        position: absolute;
+        left: -8px;
+        top: 10px;
+        width: 12px;
+        height: 12px;
+        background: #fff;
+        border: 2px solid #dee2e6;
+        border-radius: 50%;
+    }
+    
+    .message-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 5px;
+    }
+    
+    .message-type {
+        color: #0d6efd;
+        font-weight: bold;
+    }
+    
+    .message-id {
+        color: #6c757d;
+        font-size: 0.8rem;
+    }
+</style>
+{% endblock %} 

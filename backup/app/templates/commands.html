@@ -1,0 +1,301 @@
+{% extends "base.html" %}
+
+{% block title %}自定义命令 - Telegram Bot管理系统{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="bi bi-code-slash"></i> 自定义命令</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <button type="button" class="btn btn-sm btn-primary" id="addCommandBtn">
+            <i class="bi bi-plus"></i> 添加命令
+        </button>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">命令列表</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>命令</th>
+                                <th>描述</th>
+                                <th>权限</th>
+                                <th>操作类型</th>
+                                <th>状态</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>/hello</code></td>
+                                <td>欢迎消息</td>
+                                <td><span class="badge bg-success">所有用户</span></td>
+                                <td>回复固定消息</td>
+                                <td><span class="badge bg-success">启用</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary me-1"><i class="bi bi-pencil"></i></button>
+                                    <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><code>/rules</code></td>
+                                <td>显示群组规则</td>
+                                <td><span class="badge bg-success">所有用户</span></td>
+                                <td>回复固定消息</td>
+                                <td><span class="badge bg-success">启用</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary me-1"><i class="bi bi-pencil"></i></button>
+                                    <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><code>/clean</code></td>
+                                <td>清理群消息</td>
+                                <td><span class="badge bg-warning">管理员</span></td>
+                                <td>执行清理操作</td>
+                                <td><span class="badge bg-success">启用</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary me-1"><i class="bi bi-pencil"></i></button>
+                                    <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><code>/welcome</code></td>
+                                <td>欢迎新成员</td>
+                                <td><span class="badge bg-warning">管理员</span></td>
+                                <td>发送欢迎消息</td>
+                                <td><span class="badge bg-secondary">禁用</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary me-1"><i class="bi bi-pencil"></i></button>
+                                    <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="card-title mb-0">命令使用统计</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="commandUsageChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="card-title mb-0">命令响应时间</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="responseTimeChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 添加命令模态框 -->
+<div class="modal fade" id="commandModal" tabindex="-1" aria-labelledby="commandModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="commandModalLabel">添加自定义命令</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="commandForm">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="commandName" class="form-label">命令名称</label>
+                            <div class="input-group">
+                                <span class="input-group-text">/</span>
+                                <input type="text" class="form-control" id="commandName" placeholder="命令名称，不含斜杠">
+                            </div>
+                            <div class="form-text">例如：hello、rules</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="commandPermission" class="form-label">权限设置</label>
+                            <select class="form-select" id="commandPermission">
+                                <option value="all">所有用户</option>
+                                <option value="admin">仅管理员</option>
+                                <option value="owner">仅超级管理员</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="commandDescription" class="form-label">命令描述</label>
+                        <input type="text" class="form-control" id="commandDescription" placeholder="命令的简短描述">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="commandType" class="form-label">命令类型</label>
+                        <select class="form-select" id="commandType">
+                            <option value="text">回复固定文本</option>
+                            <option value="photo">回复图片</option>
+                            <option value="action">执行操作</option>
+                            <option value="custom">自定义脚本</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3" id="textResponseDiv">
+                        <label for="commandResponse" class="form-label">回复内容</label>
+                        <textarea class="form-control" id="commandResponse" rows="5" placeholder="命令的回复内容，支持Markdown格式"></textarea>
+                        <div class="form-text">支持变量：{username}、{first_name}、{group_name}</div>
+                    </div>
+                    
+                    <div class="mb-3" id="scriptDiv" style="display: none;">
+                        <label for="commandScript" class="form-label">自定义脚本</label>
+                        <textarea class="form-control" id="commandScript" rows="8" placeholder="输入Python代码"></textarea>
+                        <div class="form-text">可使用的函数：send_message()、delete_message()、restrict_user()</div>
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="commandEnabled" checked>
+                        <label class="form-check-label" for="commandEnabled">启用此命令</label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="saveCommand">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 命令使用统计图表
+        const commandUsageCtx = document.getElementById('commandUsageChart').getContext('2d');
+        new Chart(commandUsageCtx, {
+            type: 'bar',
+            data: {
+                labels: ['/hello', '/rules', '/clean', '/welcome'],
+                datasets: [{
+                    label: '使用次数',
+                    data: [124, 86, 45, 12],
+                    backgroundColor: [
+                        'rgba(54, 162, 235, 0.6)',
+                        'rgba(75, 192, 192, 0.6)',
+                        'rgba(255, 206, 86, 0.6)',
+                        'rgba(153, 102, 255, 0.6)'
+                    ],
+                    borderColor: [
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(153, 102, 255, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+        
+        // 命令响应时间图表
+        const responseTimeCtx = document.getElementById('responseTimeChart').getContext('2d');
+        new Chart(responseTimeCtx, {
+            type: 'line',
+            data: {
+                labels: ['/hello', '/rules', '/clean', '/welcome'],
+                datasets: [{
+                    label: '平均响应时间 (ms)',
+                    data: [120, 150, 480, 220],
+                    fill: false,
+                    backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+        
+        // 添加命令按钮
+        document.getElementById('addCommandBtn').addEventListener('click', function() {
+            var modal = new bootstrap.Modal(document.getElementById('commandModal'));
+            modal.show();
+        });
+        
+        // 命令类型切换
+        document.getElementById('commandType').addEventListener('change', function() {
+            const type = this.value;
+            const textDiv = document.getElementById('textResponseDiv');
+            const scriptDiv = document.getElementById('scriptDiv');
+            
+            if (type === 'text' || type === 'photo') {
+                textDiv.style.display = 'block';
+                scriptDiv.style.display = 'none';
+            } else if (type === 'custom') {
+                textDiv.style.display = 'none';
+                scriptDiv.style.display = 'block';
+            } else {
+                textDiv.style.display = 'block';
+                scriptDiv.style.display = 'none';
+            }
+        });
+        
+        // 保存命令
+        document.getElementById('saveCommand').addEventListener('click', function() {
+            // 获取表单数据
+            const name = document.getElementById('commandName').value;
+            const permission = document.getElementById('commandPermission').value;
+            const description = document.getElementById('commandDescription').value;
+            const type = document.getElementById('commandType').value;
+            const response = document.getElementById('commandResponse').value;
+            const script = document.getElementById('commandScript').value;
+            const enabled = document.getElementById('commandEnabled').checked;
+            
+            // 验证表单
+            if (!name || !description) {
+                alert('请填写完整信息');
+                return;
+            }
+            
+            // 这里应该发送到API保存数据
+            // 模拟保存成功
+            alert('命令保存成功！');
+            
+            // 关闭模态框
+            var modal = bootstrap.Modal.getInstance(document.getElementById('commandModal'));
+            modal.hide();
+        });
+    });
+</script>
+{% endblock %} 

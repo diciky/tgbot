@@ -1,0 +1,339 @@
+{% extends "base.html" %}
+
+{% block title %}群组管理 - Telegram Bot管理系统{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="bi bi-diagram-3"></i> 群组管理</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="input-group me-2">
+            <input type="text" class="form-control" placeholder="搜索群组..." id="groupSearchInput">
+            <button class="btn btn-outline-secondary" type="button" id="searchBtn">
+                <i class="bi bi-search"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <ul class="nav nav-tabs card-header-tabs" id="groupTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="all-groups-tab" data-bs-toggle="tab" data-bs-target="#all-groups" type="button" role="tab" aria-controls="all-groups" aria-selected="true">所有群组</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="joined-groups-tab" data-bs-toggle="tab" data-bs-target="#joined-groups" type="button" role="tab" aria-controls="joined-groups" aria-selected="false">已加入群组</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="admin-groups-tab" data-bs-toggle="tab" data-bs-target="#admin-groups" type="button" role="tab" aria-controls="admin-groups" aria-selected="false">管理的群组</button>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="tab-content" id="groupTabsContent">
+                    <div class="tab-pane fade show active" id="all-groups" role="tabpanel" aria-labelledby="all-groups-tab">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>群组名称</th>
+                                        <th>类型</th>
+                                        <th>成员数</th>
+                                        <th>消息数</th>
+                                        <th>活跃度</th>
+                                        <th>Bot角色</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>-1001234567890</td>
+                                        <td><a href="#" class="group-link">测试群组A</a></td>
+                                        <td>公开群组</td>
+                                        <td>128</td>
+                                        <td>3,465</td>
+                                        <td>
+                                            <div class="progress" style="height: 8px;">
+                                                <div class="progress-bar bg-success" role="progressbar" style="width: 75%;" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100"></div>
+                                            </div>
+                                        </td>
+                                        <td><span class="badge bg-success">管理员</span></td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-outline-primary"><i class="bi bi-chat-dots"></i></button>
+                                                <button class="btn btn-outline-primary"><i class="bi bi-gear"></i></button>
+                                                <button class="btn btn-outline-danger"><i class="bi bi-box-arrow-right"></i></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>-1009876543210</td>
+                                        <td><a href="#" class="group-link">测试群组B</a></td>
+                                        <td>私密群组</td>
+                                        <td>45</td>
+                                        <td>1,278</td>
+                                        <td>
+                                            <div class="progress" style="height: 8px;">
+                                                <div class="progress-bar bg-warning" role="progressbar" style="width: 45%;" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100"></div>
+                                            </div>
+                                        </td>
+                                        <td><span class="badge bg-info">成员</span></td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-outline-primary"><i class="bi bi-chat-dots"></i></button>
+                                                <button class="btn btn-outline-primary"><i class="bi bi-gear"></i></button>
+                                                <button class="btn btn-outline-danger"><i class="bi bi-box-arrow-right"></i></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-pane fade" id="joined-groups" role="tabpanel" aria-labelledby="joined-groups-tab">
+                        <p>加载中...</p>
+                    </div>
+                    
+                    <div class="tab-pane fade" id="admin-groups" role="tabpanel" aria-labelledby="admin-groups-tab">
+                        <p>加载中...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">群组消息统计</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="groupMessagesChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-success text-white">
+                <h5 class="card-title mb-0">群组活跃用户统计</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="groupUsersChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 群组详情模态框 -->
+<div class="modal fade" id="groupDetailModal" tabindex="-1" aria-labelledby="groupDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="groupDetailModalLabel">群组详情</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <h6>基本信息</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <th style="width: 30%">群组ID</th>
+                                    <td id="groupDetailId">-1001234567890</td>
+                                </tr>
+                                <tr>
+                                    <th>群组名称</th>
+                                    <td id="groupDetailName">测试群组A</td>
+                                </tr>
+                                <tr>
+                                    <th>类型</th>
+                                    <td id="groupDetailType">公开群组</td>
+                                </tr>
+                                <tr>
+                                    <th>成员数</th>
+                                    <td id="groupDetailMembers">128</td>
+                                </tr>
+                                <tr>
+                                    <th>创建时间</th>
+                                    <td id="groupDetailCreated">2023-05-15</td>
+                                </tr>
+                                <tr>
+                                    <th>机器人角色</th>
+                                    <td id="groupDetailRole">管理员</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <h6>统计数据</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <th style="width: 40%">总消息数</th>
+                                    <td id="groupDetailMessages">3,465</td>
+                                </tr>
+                                <tr>
+                                    <th>今日消息数</th>
+                                    <td id="groupDetailTodayMessages">56</td>
+                                </tr>
+                                <tr>
+                                    <th>活跃用户数</th>
+                                    <td id="groupDetailActiveUsers">45</td>
+                                </tr>
+                                <tr>
+                                    <th>机器人消息数</th>
+                                    <td id="groupDetailBotMessages">120</td>
+                                </tr>
+                                <tr>
+                                    <th>命令使用次数</th>
+                                    <td id="groupDetailCommands">78</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <h6>群组设置</h6>
+                    <form id="groupSettingsForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="settingWelcome" checked>
+                                    <label class="form-check-label" for="settingWelcome">欢迎新成员</label>
+                                </div>
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="settingKeywords" checked>
+                                    <label class="form-check-label" for="settingKeywords">关键词过滤</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="settingAutoDelete">
+                                    <label class="form-check-label" for="settingAutoDelete">自动删除命令</label>
+                                </div>
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="settingStats" checked>
+                                    <label class="form-check-label" for="settingStats">收集统计信息</label>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                <button type="button" class="btn btn-primary" id="saveGroupSettings">保存设置</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 群组消息统计图表
+        const groupMessagesCtx = document.getElementById('groupMessagesChart').getContext('2d');
+        new Chart(groupMessagesCtx, {
+            type: 'bar',
+            data: {
+                labels: ['测试群组A', '测试群组B', '测试群组C', '测试群组D', '测试群组E'],
+                datasets: [{
+                    label: '消息数量',
+                    data: [3465, 1278, 856, 435, 234],
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+        
+        // 群组活跃用户统计图表
+        const groupUsersCtx = document.getElementById('groupUsersChart').getContext('2d');
+        new Chart(groupUsersCtx, {
+            type: 'pie',
+            data: {
+                labels: ['测试群组A', '测试群组B', '测试群组C', '测试群组D', '测试群组E'],
+                datasets: [{
+                    data: [45, 32, 25, 18, 12],
+                    backgroundColor: [
+                        'rgba(54, 162, 235, 0.6)',
+                        'rgba(75, 192, 192, 0.6)',
+                        'rgba(255, 206, 86, 0.6)',
+                        'rgba(153, 102, 255, 0.6)',
+                        'rgba(255, 99, 132, 0.6)'
+                    ],
+                    borderColor: [
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(153, 102, 255, 1)',
+                        'rgba(255, 99, 132, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'right'
+                    }
+                }
+            }
+        });
+        
+        // 打开群组详情
+        const groupLinks = document.querySelectorAll('.group-link');
+        groupLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const modal = new bootstrap.Modal(document.getElementById('groupDetailModal'));
+                modal.show();
+            });
+        });
+        
+        // 保存群组设置
+        document.getElementById('saveGroupSettings').addEventListener('click', function() {
+            alert('群组设置已保存');
+            const modal = bootstrap.Modal.getInstance(document.getElementById('groupDetailModal'));
+            modal.hide();
+        });
+        
+        // 搜索功能
+        document.getElementById('searchBtn').addEventListener('click', function() {
+            const searchTerm = document.getElementById('groupSearchInput').value.toLowerCase();
+            if (searchTerm.trim() === '') {
+                alert('请输入搜索内容');
+                return;
+            }
+            
+            // 这里应该调用API搜索群组
+            alert('正在搜索: ' + searchTerm);
+        });
+    });
+</script>
+{% endblock %} 

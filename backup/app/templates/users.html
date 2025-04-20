@@ -1,0 +1,385 @@
+{% extends "base.html" %}
+
+{% block title %}用户管理 - Telegram Bot管理系统{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4"><i class="bi bi-people"></i> 用户管理</h1>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">用户列表</h5>
+        <div>
+            <button class="btn btn-sm btn-outline-primary" id="refreshBtn">
+                <i class="bi bi-arrow-clockwise"></i> 刷新
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>用户ID</th>
+                        <th>用户名</th>
+                        <th>姓名</th>
+                        <th>身份</th>
+                        <th>加入时间</th>
+                        <th>最后活动</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="userTableBody">
+                    <tr>
+                        <td colspan="7" class="text-center">加载中...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card-footer">
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center" id="pagination">
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" tabindex="-1">上一页</a>
+                </li>
+                <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                <li class="page-item disabled">
+                    <a class="page-link" href="#">下一页</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</div>
+
+<!-- 用户详情模态框 -->
+<div class="modal fade" id="userDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">用户详情</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="userDetailBody">
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">加载中...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                <button type="button" class="btn btn-danger" id="deleteUserBtn">删除用户</button>
+                <button type="button" class="btn btn-primary" id="sendMessageBtn">发送消息</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 发送消息模态框 -->
+<div class="modal fade" id="sendMessageModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">发送消息</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="sendMessageForm">
+                    <div class="mb-3">
+                        <label for="messageText" class="form-label">消息内容</label>
+                        <textarea class="form-control" id="messageText" rows="4" required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="confirmSendBtn">发送</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // 全局变量
+    let currentPage = 1;
+    let pageSize = 10;
+    let totalUsers = 0;
+    let selectedUserId = null;
+    
+    // 加载用户列表
+    async function loadUsers(page = 1, limit = 10) {
+        try {
+            // 显示加载中
+            document.getElementById('userTableBody').innerHTML = `
+                <tr>
+                    <td colspan="7" class="text-center">
+                        <div class="spinner-border spinner-border-sm text-primary" role="status">
+                            <span class="visually-hidden">加载中...</span>
+                        </div>
+                        加载中...
+                    </td>
+                </tr>
+            `;
+            
+            // 计算跳过的记录数
+            const skip = (page - 1) * limit;
+            
+            // 发送请求
+            const response = await axios.get('/api/users', {
+                params: { skip, limit }
+            });
+            
+            const { users, total } = response.data;
+            totalUsers = total;
+            
+            // 更新表格
+            let tableHtml = '';
+            
+            if (users.length === 0) {
+                tableHtml = `
+                    <tr>
+                        <td colspan="7" class="text-center">没有找到用户</td>
+                    </tr>
+                `;
+            } else {
+                users.forEach(user => {
+                    tableHtml += `
+                        <tr>
+                            <td>${user.user_id}</td>
+                            <td>${user.username || '-'}</td>
+                            <td>${[user.first_name, user.last_name].filter(Boolean).join(' ') || '-'}</td>
+                            <td>${user.is_admin ? '<span class="badge bg-danger">管理员</span>' : '<span class="badge bg-secondary">用户</span>'}</td>
+                            <td>${new Date(user.join_date).toLocaleString()}</td>
+                            <td>${new Date(user.last_activity).toLocaleString()}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-info view-user" data-user-id="${user.user_id}">
+                                    <i class="bi bi-eye"></i> 查看
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+            
+            document.getElementById('userTableBody').innerHTML = tableHtml;
+            
+            // 更新分页
+            updatePagination(page, limit, total);
+            
+            // 添加用户查看事件
+            document.querySelectorAll('.view-user').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const userId = this.getAttribute('data-user-id');
+                    showUserDetail(userId);
+                });
+            });
+            
+        } catch (error) {
+            console.error('加载用户失败:', error);
+            document.getElementById('userTableBody').innerHTML = `
+                <tr>
+                    <td colspan="7" class="text-center text-danger">
+                        加载失败: ${error.response?.data?.detail || error.message}
+                    </td>
+                </tr>
+            `;
+        }
+    }
+    
+    // 更新分页
+    function updatePagination(currentPage, pageSize, totalItems) {
+        const totalPages = Math.ceil(totalItems / pageSize);
+        
+        let paginationHtml = '';
+        
+        // 上一页按钮
+        paginationHtml += `
+            <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                <a class="page-link" href="#" data-page="${currentPage - 1}">上一页</a>
+            </li>
+        `;
+        
+        // 页码按钮
+        const startPage = Math.max(1, currentPage - 2);
+        const endPage = Math.min(totalPages, startPage + 4);
+        
+        for (let i = startPage; i <= endPage; i++) {
+            paginationHtml += `
+                <li class="page-item ${i === currentPage ? 'active' : ''}">
+                    <a class="page-link" href="#" data-page="${i}">${i}</a>
+                </li>
+            `;
+        }
+        
+        // 下一页按钮
+        paginationHtml += `
+            <li class="page-item ${currentPage === totalPages || totalPages === 0 ? 'disabled' : ''}">
+                <a class="page-link" href="#" data-page="${currentPage + 1}">下一页</a>
+            </li>
+        `;
+        
+        document.getElementById('pagination').innerHTML = paginationHtml;
+        
+        // 添加分页事件
+        document.querySelectorAll('#pagination .page-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                if (this.parentElement.classList.contains('disabled')) {
+                    return;
+                }
+                
+                const page = parseInt(this.getAttribute('data-page'));
+                currentPage = page;
+                loadUsers(page, pageSize);
+            });
+        });
+    }
+    
+    // 显示用户详情
+    async function showUserDetail(userId) {
+        selectedUserId = userId;
+        
+        try {
+            // 获取用户详情
+            const users = await axios.get('/api/users', {
+                params: { limit: 100 }
+            });
+            
+            const user = users.data.users.find(u => u.user_id == userId);
+            
+            if (!user) {
+                throw new Error('用户不存在');
+            }
+            
+            // 创建详情HTML
+            const detailHtml = `
+                <div class="text-center mb-4">
+                    <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(user.first_name || 'U')}&background=random&size=100" class="rounded-circle" alt="用户头像">
+                    <h4 class="mt-2">${[user.first_name, user.last_name].filter(Boolean).join(' ') || '未命名用户'}</h4>
+                    <p class="text-muted">@${user.username || '-'}</p>
+                </div>
+                <div class="user-info">
+                    <div class="mb-2 row">
+                        <div class="col-4 fw-bold">用户ID:</div>
+                        <div class="col-8">${user.user_id}</div>
+                    </div>
+                    <div class="mb-2 row">
+                        <div class="col-4 fw-bold">身份:</div>
+                        <div class="col-8">${user.is_admin ? '<span class="badge bg-danger">管理员</span>' : '<span class="badge bg-secondary">用户</span>'}</div>
+                    </div>
+                    <div class="mb-2 row">
+                        <div class="col-4 fw-bold">语言:</div>
+                        <div class="col-8">${user.language_code || '-'}</div>
+                    </div>
+                    <div class="mb-2 row">
+                        <div class="col-4 fw-bold">加入时间:</div>
+                        <div class="col-8">${new Date(user.join_date).toLocaleString()}</div>
+                    </div>
+                    <div class="mb-2 row">
+                        <div class="col-4 fw-bold">最后活动:</div>
+                        <div class="col-8">${new Date(user.last_activity).toLocaleString()}</div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('userDetailBody').innerHTML = detailHtml;
+            
+            // 显示模态框
+            const modal = new bootstrap.Modal(document.getElementById('userDetailModal'));
+            modal.show();
+            
+        } catch (error) {
+            console.error('获取用户详情失败:', error);
+            alert('获取用户详情失败: ' + (error.response?.data?.detail || error.message));
+        }
+    }
+    
+    // 删除用户
+    async function deleteUser(userId) {
+        if (!confirm('确定要删除此用户吗？此操作不可撤销！')) {
+            return;
+        }
+        
+        try {
+            await axios.delete(`/api/users/${userId}`);
+            
+            // 关闭模态框
+            const modal = bootstrap.Modal.getInstance(document.getElementById('userDetailModal'));
+            modal.hide();
+            
+            // 刷新用户列表
+            loadUsers(currentPage, pageSize);
+            
+            alert('用户删除成功');
+        } catch (error) {
+            console.error('删除用户失败:', error);
+            alert('删除用户失败: ' + (error.response?.data?.detail || error.message));
+        }
+    }
+    
+    // 页面加载完成后执行
+    document.addEventListener('DOMContentLoaded', function() {
+        // 加载用户列表
+        loadUsers(currentPage, pageSize);
+        
+        // 刷新按钮
+        document.getElementById('refreshBtn').addEventListener('click', function() {
+            loadUsers(currentPage, pageSize);
+        });
+        
+        // 删除用户
+        document.getElementById('deleteUserBtn').addEventListener('click', function() {
+            if (selectedUserId) {
+                deleteUser(selectedUserId);
+            }
+        });
+        
+        // 发送消息
+        document.getElementById('sendMessageBtn').addEventListener('click', function() {
+            if (selectedUserId) {
+                // 显示发送消息模态框
+                const modal = new bootstrap.Modal(document.getElementById('sendMessageModal'));
+                modal.show();
+            }
+        });
+        
+        // 确认发送消息
+        document.getElementById('confirmSendBtn').addEventListener('click', async function() {
+            const messageText = document.getElementById('messageText').value.trim();
+            
+            if (!messageText) {
+                alert('请输入消息内容');
+                return;
+            }
+            
+            try {
+                await axios.post('/api/send_message', null, {
+                    params: {
+                        chat_id: parseInt(selectedUserId),
+                        text: messageText
+                    }
+                });
+                
+                // 关闭模态框
+                const modal = bootstrap.Modal.getInstance(document.getElementById('sendMessageModal'));
+                modal.hide();
+                
+                // 清空消息框
+                document.getElementById('messageText').value = '';
+                
+                alert('消息发送成功');
+            } catch (error) {
+                console.error('发送消息失败:', error);
+                alert('发送消息失败: ' + (error.response?.data?.detail || error.message));
+            }
+        });
+    });
+</script>
+{% endblock %} 

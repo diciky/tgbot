@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block title %}设置 - Telegram Bot管理系统{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4"><i class="bi bi-gear"></i> 设置</h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <div class="list-group" id="settings-tab">
+            <a class="list-group-item list-group-item-action active" id="general-tab" data-bs-toggle="list" href="#general">
+                <i class="bi bi-sliders"></i> 常规设置
+            </a>
+            <a class="list-group-item list-group-item-action" id="bot-tab" data-bs-toggle="list" href="#bot">
+                <i class="bi bi-robot"></i> 机器人设置
+            </a>
+            <a class="list-group-item list-group-item-action" id="message-tab" data-bs-toggle="list" href="#message">
+                <i class="bi bi-chat-dots"></i> 消息设置
+            </a>
+            <a class="list-group-item list-group-item-action" id="account-tab" data-bs-toggle="list" href="#account">
+                <i class="bi bi-person-circle"></i> 账户设置
+            </a>
+            <a class="list-group-item list-group-item-action" id="system-tab" data-bs-toggle="list" href="#system">
+                <i class="bi bi-info-circle"></i> 系统信息
+            </a>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="tab-content card">
+            <!-- 常规设置 -->
+            <div class="tab-pane fade show active" id="general">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">常规设置</h5>
+                </div>
+                <div class="card-body">
+                    <form id="generalSettingsForm">
+                        <div class="mb-3">
+                            <label for="systemName" class="form-label">系统名称</label>
+                            <input type="text" class="form-control" id="systemName" value="Telegram Bot管理系统">
+                        </div>
+                        <div class="mb-3">
+                            <label for="timeZone" class="form-label">时区</label>
+                            <select class="form-select" id="timeZone">
+                                <option value="Asia/Shanghai" selected>中国标准时间 (UTC+8)</option>
+                                <option value="UTC">世界协调时间 (UTC)</option>
+                                <option value="America/New_York">美国东部时间 (UTC-5)</option>
+                                <option value="Europe/London">英国时间 (UTC+0/+1)</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="language" class="form-label">语言</label>
+                            <select class="form-select" id="language">
+                                <option value="zh" selected>简体中文</option>
+                                <option value="en">English</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">保存设置</button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- 机器人设置 -->
+            <div class="tab-pane fade" id="bot">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">机器人设置</h5>
+                </div>
+                <div class="card-body">
+                    <form id="botSettingsForm">
+                        <div class="mb-3">
+                            <label for="botToken" class="form-label">Bot Token</label>
+                            <input type="text" class="form-control" id="botToken" value="7835535055:AAGXy8indfDQeK1Gc7JVb_6oonr7uJFzA8M">
+                            <div class="form-text">请从BotFather获取的Token</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="adminIds" class="form-label">管理员ID</label>
+                            <input type="text" class="form-control" id="adminIds" value="615346634">
+                            <div class="form-text">多个ID请用逗号分隔</div>
+                        </div>
+                        <div class="mb-3 form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="enableCommands" checked>
+                            <label class="form-check-label" for="enableCommands">启用命令菜单</label>
+                        </div>
+                        <button type="submit" class="btn btn-primary">保存设置</button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- 消息设置 -->
+            <div class="tab-pane fade" id="message">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">消息设置</h5>
+                </div>
+                <div class="card-body">
+                    <form id="messageSettingsForm">
+                        <div class="mb-3 form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="autoDeleteMessages" checked>
+                            <label class="form-check-label" for="autoDeleteMessages">自动删除消息</label>
+                        </div>
+                        <div class="mb-3">
+                            <label for="autoDeleteInterval" class="form-label">自动删除时间间隔（秒）</label>
+                            <input type="number" class="form-control" id="autoDeleteInterval" value="30">
+                        </div>
+                        <div class="mb-3">
+                            <label for="welcomeMessage" class="form-label">欢迎消息</label>
+                            <textarea class="form-control" id="welcomeMessage" rows="3">欢迎使用Telegram Bot!</textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">保存设置</button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- 账户设置 -->
+            <div class="tab-pane fade" id="account">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">账户设置</h5>
+                </div>
+                <div class="card-body">
+                    <form id="accountSettingsForm">
+                        <div class="mb-3">
+                            <label for="adminUsername" class="form-label">管理员用户名</label>
+                            <input type="text" class="form-control" id="adminUsername" value="admin">
+                        </div>
+                        <div class="mb-3">
+                            <label for="currentPassword" class="form-label">当前密码</label>
+                            <input type="password" class="form-control" id="currentPassword">
+                        </div>
+                        <div class="mb-3">
+                            <label for="newPassword" class="form-label">新密码</label>
+                            <input type="password" class="form-control" id="newPassword">
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirmPassword" class="form-label">确认新密码</label>
+                            <input type="password" class="form-control" id="confirmPassword">
+                        </div>
+                        <button type="submit" class="btn btn-primary">更新密码</button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- 系统信息 -->
+            <div class="tab-pane fade" id="system">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">系统信息</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table">
+                        <tbody>
+                            <tr>
+                                <th>系统版本</th>
+                                <td>1.0.0</td>
+                            </tr>
+                            <tr>
+                                <th>MongoDB版本</th>
+                                <td>最新版</td>
+                            </tr>
+                            <tr>
+                                <th>Python版本</th>
+                                <td>3.11</td>
+                            </tr>
+                            <tr>
+                                <th>Bot API版本</th>
+                                <td>6.3</td>
+                            </tr>
+                            <tr>
+                                <th>系统启动时间</th>
+                                <td id="systemStartTime">-</td>
+                            </tr>
+                            <tr>
+                                <th>当前时间</th>
+                                <td id="currentTime">-</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-outline-primary" id="refreshSystemInfo">
+                            <i class="bi bi-arrow-clockwise"></i> 刷新系统信息
+                        </button>
+                        <button type="button" class="btn btn-outline-danger" id="restartSystem">
+                            <i class="bi bi-power"></i> 重启系统
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 更新当前时间
+        function updateCurrentTime() {
+            const now = new Date();
+            document.getElementById('currentTime').textContent = now.toLocaleString();
+        }
+        
+        // 初始化系统启动时间
+        function initSystemStartTime() {
+            const startTime = new Date();
+            startTime.setHours(startTime.getHours() - 2); // 假设系统2小时前启动
+            document.getElementById('systemStartTime').textContent = startTime.toLocaleString();
+        }
+        
+        // 表单提交处理
+        document.querySelectorAll('form').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // 这里可以添加表单验证和数据提交逻辑
+                // 为了演示，我们只显示一个成功消息
+                alert('设置已保存');
+            });
+        });
+        
+        // 刷新系统信息
+        document.getElementById('refreshSystemInfo').addEventListener('click', function() {
+            updateCurrentTime();
+            alert('系统信息已刷新');
+        });
+        
+        // 重启系统
+        document.getElementById('restartSystem').addEventListener('click', function() {
+            if (confirm('确定要重启系统吗？这将暂时中断Bot服务。')) {
+                alert('此功能尚未实现');
+            }
+        });
+        
+        // 初始化
+        updateCurrentTime();
+        initSystemStartTime();
+        
+        // 每秒更新当前时间
+        setInterval(updateCurrentTime, 1000);
+    });
+</script>
+{% endblock %} 
